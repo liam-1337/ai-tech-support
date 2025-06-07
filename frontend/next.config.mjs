@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // reactStrictMode: true, // Default is true, good for development
-  // output: 'standalone', // Uncomment for Docker deployment if needed
+  output: 'standalone', // Recommended for Electron packaging
   // experimental: {
   //   typedRoutes: true, // Optional: For type-safe routing
   // },

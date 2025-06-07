@@ -1,0 +1,69 @@
+{
+  "name": "ai-tech-support",
+  "version": "1.0.0",
+  "main": "electron/main.js",
+  "description": "AI Tech Support Desktop Application",
+  "author": "Your Name",
+  "scripts": {
+    "start": "concurrently \"npm:start:frontend\" \"wait-on http://localhost:3000 && electron .\"",
+    "build": "npm run build:frontend && echo \"Error: no main build script specified for electron-builder\" && exit 1",
+    "pack": "echo \"Error: no pack script specified\" && exit 1",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:frontend": "cd frontend && npm run build",
+    "start:frontend": "cd frontend && npm run start",
+    "build": "npm run build:frontend && electron-builder",
+    "pack": "npm run build:frontend && electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.electron.aitechsupportagent",
+    "productName": "AI Tech Support Agent",
+    "directories": {
+      "output": "dist_electron",
+      "app": "."
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/.next/standalone/**/*",
+      "ai_tech_support_agent/**/*",
+      "!frontend/node_modules/**/*",
+      "!ai_tech_support_agent/venv/**/*",
+      "!ai_tech_support_agent/.venv/**/*",
+      "!ai_tech_support_agent/.git/**/*",
+      "!ai_tech_support_agent/docs/**/*",
+      "!ai_tech_support_agent/tests/**/*",
+      "!**/*.pyc",
+      "!**/__pycache__"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "electron/icons/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "electron/icons/icon.png",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "electron/icons/icon.png",
+      "category": "Utility"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liam-1337/ai-tech-support.git"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/liam-1337/ai-tech-support/issues"
+  },
+  "homepage": "https://github.com/liam-1337/ai-tech-support#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^29.1.5",
+    "electron-builder": "^24.13.3",
+    "electron-is-dev": "^3.0.1",
+    "wait-on": "^7.2.0"
+  }
+}
