@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field # Added Field
 
 # Project-specific imports
 from app import config
@@ -210,6 +210,33 @@ async def query_documents(request: QueryRequest):
 
     logger.info(f"Successfully generated answer for query: '{request.question}'.")
     return QueryResponse(generated_answer=llm_answer, source_chunks=source_chunks_for_response)
+
+
+@app.get("/demo_query/", response_model=QueryResponse)
+async def demo_query():
+    """
+    Returns a predefined QueryResponse object for demonstration purposes.
+    """
+    logger.info("Accessed /demo_query/ endpoint.")
+
+    sample_question = "How to reset my password?"
+    sample_answer = (
+        "To reset your password, please follow these steps:\n"
+        "1. Go to the login page.\n"
+        "2. Click on the 'Forgot Password?' link.\n"
+        "3. Enter your email address and follow the instructions sent to your inbox."
+    )
+    sample_chunks = [
+        SourceChunk(text="Step 1: Navigate to the main login screen of the application.", score=0.92),
+        SourceChunk(text="Step 2: Locate and click the 'Forgot Password?' or 'Reset Password' link, usually found below the login fields.", score=0.88),
+        SourceChunk(text="Additional Info: Ensure you have access to the email account associated with your user profile to receive the reset link.", score=0.85)
+    ]
+
+    return QueryResponse(
+        generated_answer=sample_answer,
+        source_chunks=sample_chunks,
+        message="This is a demo response."
+    )
 
 @app.get("/")
 async def root():
