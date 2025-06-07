@@ -1,0 +1,12 @@
+pypdf
+python-docx
+python-pptx
+unstructured[local-inference]
+nltk
+sentence-transformers
+faiss-cpu
+transformers
+fastapi
+uvicorn[standard]
+python-dotenv
+accelerate
