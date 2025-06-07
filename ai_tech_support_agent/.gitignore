@@ -1,0 +1,68 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+eggs/
+*.egg-info/
+*.egg
+wheels/
+*.whl
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Temporary files
+*~
+.#*
+*.swp
+*.swo
+
+# IDE and editor specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+nbproject/ # NetBeans
+.project # Eclipse
+.pydevproject # PyDev
+*.DS_Store # MacOS
+
+# Environment variable files
+.env*
+!.env.example # Ensure .env.example is NOT ignored if present
+
+# Log files
+*.log
+logs/
+
+# Data files (if not versioned)
+# Example: if vector store is generated and not part of the repo
+data/vector_store/
+# Example: if SQLite database is used and not versioned
+*.sqlite3
+*.db
+
+# Coverage reports
+.coverage
+coverage.xml
+htmlcov/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Python profiler output
+*.prof
+*.pstat
+
+# mypy cache
+.mypy_cache/
+
+# pytest cache
+.pytest_cache/
