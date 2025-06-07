@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link'; // Import Link component
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,11 +13,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <header className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-700 dark:to-indigo-900 text-white py-4 px-4 sm:px-6 lg:px-8 shadow-md sticky top-0 z-50">
         <div className="container mx-auto flex items-center justify-between max-w-7xl">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-            AI Tech Support Agent
+            <Link href="/" className="hover:text-white/90 transition-colors">
+              AI Tech Support Agent
+            </Link>
           </h1>
-          {/* Placeholder for potential future elements like user profile or theme toggle */}
-          <div className="flex items-center space-x-2">
-            {/* Example:
+          {/* Navigation Links and other header items */}
+          <div className="flex items-center space-x-4">
+            <nav className="flex items-center space-x-4">
+              <Link href="/demo" className="text-sm sm:text-base font-medium hover:text-white/80 transition-colors px-3 py-2 rounded-md hover:bg-white/10">
+                Demo
+              </Link>
+              {/* Add other navigation links here if needed */}
+            </nav>
+            {/* Example for future theme toggle or user profile icon:
             <button
               aria-label="Toggle theme"
               className="p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
