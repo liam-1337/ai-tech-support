@@ -94,4 +94,4 @@ Contributions are welcome! Please refer to the development section in the User G
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details (assuming a LICENSE file will be added, if not, remove this link or state the license directly).
+
