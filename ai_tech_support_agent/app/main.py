@@ -104,8 +104,8 @@ async def startup_event():
         elif store_dim is None and vector_store_manager.get_ntotal() > 0:
                 logger.warning("Vector store has items but its dimension could not be determined from metadata. This might indicate a corrupted metadata file.")
         elif store_dim is None and vector_store_manager.get_ntotal() == 0:
-                logger.info("Vector store is empty and dimension is not yet set (will be set on first add_embeddings).")
-    else:
+            logger.info("Vector store is empty and dimension is not yet set (will be set on first add_embeddings).")
+    else: # This else is aligned with `if vector_store_manager:`
         logger.error("VectorStoreManager is not available. Query functionality will be impaired if it was intended to be used.")
 
     # Initialize LLM Generator
@@ -268,95 +268,8 @@ async def root():
         "configured_llm_model": config.LLM_MODEL_NAME,
     }
 
-if __name__ == "__main__":
-            logger.info(f"Vector store contains {vector_store_manager.get_ntotal()} items.")
-
-            store_dim = vector_store_manager.get_dimension()
-            if store_dim is not None and store_dim != config.EMBEDDING_DIMENSION:
-                logger.critical(
-                    f"CRITICAL Dimension Mismatch: Vector store dimension is {store_dim}, "
-                    f"but configured EMBEDDING_DIMENSION is {config.EMBEDDING_DIMENSION}. "
-                    "This will likely lead to errors during embedding generation or search. "
-                    "Please ensure your vector store is compatible with the configured model."
-                )
-            elif store_dim is None and vector_store_manager.get_ntotal() > 0:
-                 logger.warning("Vector store has items but its dimension could not be determined from metadata. This might indicate a corrupted metadata file.")
-            elif store_dim is None and vector_store_manager.get_ntotal() == 0:
-                 logger.info("Vector store is empty and dimension is not yet set (will be set on first add_embeddings).")
-
-        else:
-            logger.error("VectorStoreManager is not available. Query functionality will be impaired.")
-
-    except Exception as e:
-        logger.error(f"Error during startup model or vector store initialization: {e}", exc_info=True)
-        # Depending on severity, you might want to raise an error to stop FastAPI from starting,
-        # or set a global flag indicating the app is not healthy.
-
-# --- API Endpoints ---
-@app.post("/query/", response_model=QueryResponse)
-async def query_documents(request: QueryRequest):
-    """
-    Accepts a user's question, generates an embedding for it,
-    and queries the vector store for the most relevant document chunks.
-    """
-    logger.info(f"Received query: '{request.question}', top_k={request.top_k}")
-
-    if not vector_store_manager or not vector_store_manager.is_initialized():
-        logger.error("Vector store is not available or not initialized.")
-        raise HTTPException(status_code=503, detail="Vector store is not ready. Please try again later.")
-
-    if vector_store_manager.get_ntotal() == 0:
-        logger.warning("Query attempted on an empty vector store.")
-        return QueryResponse(results=[], message="The knowledge base is currently empty. No documents to search.")
-
-    # 1. Generate embedding for the query
-    try:
-        # generate_embeddings expects a list of texts and returns a list of embeddings
-        query_embeddings = generate_embeddings(
-            text_chunks=[request.question],
-            model_name=config.MODEL_NAME # Use the model name from config
-        )
-        if not query_embeddings or not query_embeddings[0]:
-            logger.error("Failed to generate embedding for the query.")
-            raise HTTPException(status_code=500, detail="Could not generate query embedding.")
-        query_embedding = query_embeddings[0]
-    except Exception as e:
-        logger.error(f"Exception during query embedding generation: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Error generating query embedding.")
-
-    # 2. Determine k for search
-    k = request.top_k if request.top_k is not None and request.top_k > 0 else config.TOP_K_RESULTS
-
-    # 3. Search the vector store
-    try:
-        logger.debug(f"Searching vector store with k={k}. Query embedding dims: {len(query_embedding)}")
-        search_results: List[Tuple[str, float]] = vector_store_manager.search(query_embedding, k=k)
-
-        response_items = [QueryResponseItem(text_chunk=chunk, score=score) for chunk, score in search_results]
-
-        logger.info(f"Found {len(response_items)} relevant chunks for query '{request.question}'.")
-        return QueryResponse(results=response_items)
-
-    except Exception as e:
-        logger.error(f"Exception during vector store search: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Error searching for documents in the vector store.")
-
-@app.get("/")
-async def root():
-    logger.info("Root endpoint accessed.")
-    return {
-        "message": "Welcome to the AI Tech Support Agent API.",
-        "docs_url": "/docs",
-        "redoc_url": "/redoc",
-        "vector_store_status": {
-            "initialized": vector_store_manager.is_initialized() if vector_store_manager else False,
-            "item_count": vector_store_manager.get_ntotal() if vector_store_manager else 0,
-            "dimension": vector_store_manager.get_dimension() if vector_store_manager else None,
-            "configured_model": config.MODEL_NAME,
-            "configured_dimension": config.EMBEDDING_DIMENSION
-        }
-    }
-
+# Note: The following if __name__ == "__main__": block is the correct one for running with uvicorn.
+# The duplicated block that was present around line 276 has been removed.
 if __name__ == "__main__":
     import uvicorn
     logger.info(f"Starting Uvicorn server for local development on {config.API_HOST}:{config.API_PORT}")
