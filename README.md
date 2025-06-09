@@ -35,7 +35,7 @@ cd ai-tech-support # Or your repository's root folder name
 ```bash
 # Create and activate Python virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # On Windows CMD: venv\Scripts\activate.bat | On PowerShell: venv\Scripts\Activate.ps1
 
 # Install backend dependencies
 pip install -r ai_tech_support_agent/requirements.txt
