@@ -73,23 +73,58 @@ LLM_MAX_NEW_TOKENS = int(os.getenv("LLM_MAX_NEW_TOKENS", 250))
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", 0.7))
 
 # LLM_PROMPT_TEMPLATE: The template used to construct the prompt fed to the LLM.
-# It should include placeholders for '{context_chunks}' and '{question}'.
-# The default template provides a more robust structure for RAG.
-DEFAULT_PROMPT_TEMPLATE = """
-You are an AI technical support assistant. Your task is to answer the user's question based *only* on the provided context.
-Read the context carefully before answering.
+# It includes placeholders for {context_chunks}, {conversation_history}, and {question}.
+# This prompt guides the LLM to act as an IT Support Specialist.
+NEW_DEFAULT_LLM_PROMPT_TEMPLATE = """\
+You are an expert AI IT Support Specialist. Your primary goal is to help users solve their technical problems.
+Always maintain a helpful, professional, and patient tone.
 
-Context:
+Please follow these guidelines:
+1.  **Prioritize Provided Context**: Base your answers primarily on the information given in the 'CONTEXT' section below. Do not rely on prior knowledge unless the context is insufficient.
+2.  **Identify Core Problem**: Analyze the user's 'QUESTION' to identify the main technical issue and any mentioned software/hardware.
+3.  **Step-by-Step Troubleshooting**: If providing troubleshooting steps, list them clearly in a numbered or bulleted format. When providing troubleshooting steps, break the problem down into the smallest verifiable parts. For each step, suggest a clear action and an expected outcome or how to verify success.
+4.  **Ask Clarifying Questions**: If the user's query is ambiguous, lacks necessary details (e.g., software version, error messages, steps already tried), or if the provided context is insufficient, ask relevant clarifying questions. Do not guess if critical information is missing.
+5.  **Professional Tone**: Be polite and empathetic.
+6.  **Markdown for Clarity**: Use Markdown for formatting where appropriate (e.g., bolding key terms, code blocks for commands or error messages, lists for steps).
+
+CONTEXT:
 {context_chunks}
 
-Question: {question}
+CONVERSATION HISTORY (if available, most recent first):
+{conversation_history}
 
-Based *solely* on the context above, provide a helpful and concise answer.
-If the context does not contain the information needed to answer the question, state clearly: "The provided information does not directly answer this question."
-Do not make assumptions or use any external knowledge.
+QUESTION:
+{question}
 
-Helpful Answer:"""
-LLM_PROMPT_TEMPLATE = os.getenv("LLM_PROMPT_TEMPLATE", DEFAULT_PROMPT_TEMPLATE)
+Based on the context and conversation history, please provide a comprehensive answer or ask for necessary clarifications.
+Answer:
+"""
+# Use the new default. Still allow override from .env for experimentation.
+LLM_PROMPT_TEMPLATE = os.getenv("LLM_PROMPT_TEMPLATE", NEW_DEFAULT_LLM_PROMPT_TEMPLATE)
+
+# --- Session Management Configuration ---
+# SESSION_MAX_HISTORY_LENGTH: The maximum number of turns (a user query + an AI response is one turn)
+# to store in the conversation history for a session.
+# Each turn consists of two items in the list (User query, AI response).
+SESSION_MAX_HISTORY_LENGTH = int(os.getenv("SESSION_MAX_HISTORY_LENGTH", 10))
+
+
+# --- Feedback Logging Configuration ---
+# FEEDBACK_LOG_FILE: Name of the file to store interaction feedback logs.
+# This will be created in PROJECT_ROOT if not an absolute path.
+FEEDBACK_LOG_FILE = os.getenv("FEEDBACK_LOG_FILE", "interaction_feedback.log")
+FEEDBACK_LOG_LEVEL = os.getenv("FEEDBACK_LOG_LEVEL", "INFO").upper()
+
+
+# --- Escalation Management Configuration ---
+# ESCALATION_KEYWORDS: Comma-separated list of lowercase keywords that trigger escalation if found in user query.
+ESCALATION_KEYWORDS_STR = os.getenv("ESCALATION_KEYWORDS", "escalate,talk to human,human support,speak to agent,live agent")
+ESCALATION_KEYWORDS = [keyword.strip() for keyword in ESCALATION_KEYWORDS_STR.lower().split(',') if keyword.strip()]
+
+# MAX_TURNS_BEFORE_ESCALATION_CHECK: Number of total items in conversation history (user queries + AI responses)
+# that might trigger an escalation if the issue isn't resolved.
+# E.g., 8 items = 4 user turns and 4 AI turns.
+MAX_TURNS_BEFORE_ESCALATION_CHECK = int(os.getenv("MAX_TURNS_BEFORE_ESCALATION_CHECK", 8))
 
 
 # --- Directory Setup ---
@@ -132,6 +167,11 @@ if __name__ == '__main__':
     print(f"LLM Max New Tokens: {LLM_MAX_NEW_TOKENS}")
     print(f"LLM Temperature: {LLM_TEMPERATURE}")
     print(f"LLM Prompt Template (first 100 chars): {LLM_PROMPT_TEMPLATE[:100].strip()}...")
+    print(f"Session Max History Length (turns): {SESSION_MAX_HISTORY_LENGTH}")
+    print(f"Feedback Log File: {PROJECT_ROOT / FEEDBACK_LOG_FILE}") # Show absolute path
+    print(f"Feedback Log Level: {FEEDBACK_LOG_LEVEL}")
+    print(f"Escalation Keywords: {ESCALATION_KEYWORDS}")
+    print(f"Max Turns Before Escalation Check: {MAX_TURNS_BEFORE_ESCALATION_CHECK}")
     print("--- End of Configuration ---")
 
     # Test write access again explicitly if running this file
