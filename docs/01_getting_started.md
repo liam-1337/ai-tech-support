@@ -7,7 +7,7 @@ Welcome! This section will guide you through accessing the AI Tech Support Agent
 To start using the AI Tech Support Agent, you'll need to open it in your web browser.
 
 *   **URL:**
-    *   If you are running the agent locally for testing or development, it will typically be available at: `http://localhost:3000`
+    *   If you are running the agent locally for testing or development, it will typically be available at: `http://localhost:3000` (or the port specified when you run the application, e.g., 8000 for the backend API).
     *   For the production version used by the team, please use the URL provided by your IT department or supervisor.
 *   **Access Requirements:** Currently, no special login is required to access and use the AI agent. However, ensure you are connected to the company network if accessing an internally hosted version.
 
@@ -27,6 +27,8 @@ When you open the AI Agent, you'll see a clean and straightforward chat interfac
 ## What to Expect
 
 Once loaded, the AI Agent is ready for your questions! It's designed to help you find solutions to technical problems, get information about IT procedures, and understand common issues. Simply type your question into the input box and press Enter or click the "Send" button.
+
+Our enhanced AI is now more context-aware, can remember previous parts of your current conversation, may offer automated step-by-step guides for common problems, and can even help escalate your issue if it can't find a solution. Later sections in this guide will detail these advanced features.
 
 ## Next Steps
 

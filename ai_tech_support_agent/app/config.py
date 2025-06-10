@@ -127,6 +127,13 @@ ESCALATION_KEYWORDS = [keyword.strip() for keyword in ESCALATION_KEYWORDS_STR.lo
 MAX_TURNS_BEFORE_ESCALATION_CHECK = int(os.getenv("MAX_TURNS_BEFORE_ESCALATION_CHECK", 8))
 
 
+# --- Ticketing System Integration (Mock/Placeholder) ---
+# For actual integration, replace with real API URL and ensure API_KEY is securely managed (e.g., env variable not hardcoded)
+# Special values "MOCK_API_SUCCESS" and "MOCK_API_FAILURE" will trigger mocked behavior in escalation_manager.py
+TICKETING_SYSTEM_API_URL = os.getenv("TICKETING_SYSTEM_API_URL", "MOCK_API_SUCCESS") # Default to mock success
+TICKETING_SYSTEM_API_KEY = os.getenv("TICKETING_SYSTEM_API_KEY", "mock_api_key_replace_with_real_one_if_not_mocking")
+
+
 # --- Directory Setup ---
 # Ensure the directory for the vector store index exists.
 # This is important for the application to be able to save the index if it's created.
@@ -172,6 +179,10 @@ if __name__ == '__main__':
     print(f"Feedback Log Level: {FEEDBACK_LOG_LEVEL}")
     print(f"Escalation Keywords: {ESCALATION_KEYWORDS}")
     print(f"Max Turns Before Escalation Check: {MAX_TURNS_BEFORE_ESCALATION_CHECK}")
+    print(f"Ticketing System API URL: {TICKETING_SYSTEM_API_URL}")
+    # Avoid printing API key directly in logs unless it's explicitly a mock key for debugging
+    key_to_print = TICKETING_SYSTEM_API_KEY if "mock" in TICKETING_SYSTEM_API_KEY.lower() else "********"
+    print(f"Ticketing System API Key: {key_to_print}")
     print("--- End of Configuration ---")
 
     # Test write access again explicitly if running this file

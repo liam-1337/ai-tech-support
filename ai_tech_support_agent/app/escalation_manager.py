@@ -1,8 +1,10 @@
 import logging
 import uuid
+import json # For payload
+import requests # For making HTTP requests
 from typing import List, Tuple, Optional
 
-from app import config # For ESCALATION_KEYWORDS and MAX_TURNS_BEFORE_ESCALATION_CHECK
+from app import config # For ESCALATION_KEYWORDS, MAX_TURNS_BEFORE_ESCALATION_CHECK, TICKETING_SYSTEM_API_URL, TICKETING_SYSTEM_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +106,70 @@ def create_escalation_ticket(
     #     logger.error(f"Failed to create real ticket for session {session_id}: {e}", exc_info=True)
     #     return f"FAILED_TO_CREATE_TICKET_FOR_{session_id}"
 
-    return ticket_id
+    # --- Conditional Mocking & Actual API Call ---
+    api_url = config.TICKETING_SYSTEM_API_URL
+    api_key = config.TICKETING_SYSTEM_API_KEY
+
+    if api_url == "MOCK_API_SUCCESS":
+        logger.info(f"MOCKING API: Simulating successful ticket creation for session {session_id}.")
+        mock_ticket_id = f"MOCK_SYS_TICKET_{uuid.uuid4().hex[:7].upper()}"
+        logger.info(f"Mock ticket ID {mock_ticket_id} generated for session {session_id} due to MOCK_API_SUCCESS setting.")
+        return mock_ticket_id
+
+    if api_url == "MOCK_API_FAILURE":
+        logger.warning(f"MOCKING API: Simulating failed ticket creation for session {session_id}.")
+        return "ESCALATION_FAILED_COULD_NOT_CREATE_TICKET"
+
+    # --- Actual API Call Logic (if not mocked) ---
+    payload = {
+        "summary": f"AI Escalation: {user_query[:100]}", # Truncate summary if too long
+        "description": (
+            f"Reason for Escalation: {reason}\n\n"
+            f"User Query: {user_query}\n\n"
+            f"Session ID: {session_id}\n\n"
+            f"Conversation History:\n" + "\n".join(conversation_history)
+        ),
+        "user_session_id": session_id,
+        "source": "AI_SUPPORT_AGENT",
+        # Add any other fields required by your ticketing system
+        # "priority": "High",
+        # "tags": ["ai_escalation", "tech_support"]
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+
+    logger.info(f"Attempting to create escalation ticket via API for session {session_id} at URL {api_url}.")
+    try:
+        response = requests.post(api_url, headers=headers, data=json.dumps(payload), timeout=10) # 10s timeout
+        response.raise_for_status() # Raises HTTPError for bad responses (4XX or 5XX)
+
+        # Assuming the API returns JSON with a 'ticket_id' field on success
+        # Example: {"ticket_id": "SYS-12345", "status": "created"}
+        response_data = response.json()
+        actual_ticket_id = response_data.get("ticket_id")
+
+        if actual_ticket_id:
+            logger.info(f"Successfully created ticket via API: {actual_ticket_id} (HTTP {response.status_code})")
+            return str(actual_ticket_id) # Ensure it's a string
+        else:
+            logger.error(f"Ticket API call successful (HTTP {response.status_code}) but response missing 'ticket_id'. Response: {response.text[:200]}")
+            return "ESCALATION_FAILED_TICKET_ID_MISSING_IN_RESPONSE"
+
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"HTTP error creating ticket for session {session_id}: {e.response.status_code} - {e.response.text[:200]}", exc_info=True)
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error creating ticket for session {session_id} to {api_url}: {e}", exc_info=True)
+    except requests.exceptions.Timeout as e:
+        logger.error(f"Timeout error creating ticket for session {session_id} to {api_url}: {e}", exc_info=True)
+    except requests.exceptions.RequestException as e: # Catch any other requests-related error
+        logger.error(f"Error creating ticket for session {session_id}: {e}", exc_info=True)
+    except json.JSONDecodeError as e: # If API response is not valid JSON
+        logger.error(f"Error decoding JSON response from ticketing API for session {session_id}. Status: {response.status_code if 'response' in locals() else 'N/A'}. Response text: {response.text[:200] if 'response' in locals() else 'N/A'}. Error: {e}", exc_info=True)
+
+    return "ESCALATION_FAILED_COULD_NOT_CREATE_TICKET" # Fallback for any failure
 
 
 if __name__ == "__main__":
@@ -145,10 +210,10 @@ if __name__ == "__main__":
         "User: Still Problem A", "AI: Solution B",
         "User: Still Problem A!!", "AI: Solution C", # This makes history length 6, meeting threshold
     ]
-    should_escalate, reason = check_for_escalation(test_session_id, query3, history3)
-    logger.info(f"Test 3: Escalation: {should_escalate}, Reason: {reason}")
-    assert should_escalate
-    assert "Conversation length" in reason
+    should_escalate_test3, reason_test3 = check_for_escalation(test_session_id, query3, history3)
+    logger.info(f"Test 3: Escalation: {should_escalate_test3}, Reason: {reason_test3}")
+    assert should_escalate_test3
+    assert "Conversation length" in reason_test3
 
     # Test 4: No keyword, history just under threshold
     query4 = "One last try."
@@ -160,11 +225,34 @@ if __name__ == "__main__":
     logger.info(f"Test 4: Escalation: {should_escalate}, Reason: {reason}")
     assert not should_escalate
 
-    # Test 5: Create a ticket
-    if should_escalate: # From Test 3
-        ticket_id = create_escalation_ticket(test_session_id, query3, history3, reason)
-        logger.info(f"Test 5: Created ticket ID: {ticket_id}")
-        assert ticket_id.startswith("ESCALATED_TICKET_")
+    # Test 5: Create a ticket (Mock Success)
+    logger.info("\n--- Test 5: Create Ticket (Mock Success) ---")
+    original_api_url = config.TICKETING_SYSTEM_API_URL # Save to restore
+    config.TICKETING_SYSTEM_API_URL = "MOCK_API_SUCCESS"
+    if should_escalate_test3:
+        ticket_id_success = create_escalation_ticket(test_session_id, query3, history3, reason_test3)
+        logger.info(f"Test 5: Mock Success Ticket ID: {ticket_id_success}")
+        assert ticket_id_success.startswith("MOCK_SYS_TICKET_")
 
-    logger.info("--- EscalationManager tests complete ---")
+    # Test 6: Create a ticket (Mock Failure)
+    logger.info("\n--- Test 6: Create Ticket (Mock Failure) ---")
+    config.TICKETING_SYSTEM_API_URL = "MOCK_API_FAILURE"
+    if should_escalate_test3:
+        ticket_id_failure = create_escalation_ticket(test_session_id, query3, history3, reason_test3)
+        logger.info(f"Test 6: Mock Failure Ticket ID: {ticket_id_failure}")
+        assert ticket_id_failure == "ESCALATION_FAILED_COULD_NOT_CREATE_TICKET"
+
+    # Test 7: Create a ticket (Simulate Real API - will fail if URL is not live, but tests path)
+    # This test is more for verifying the requests call structure.
+    # It's expected to fail if the URL is "http://mock-ticketing-api.example.com/api/tickets"
+    logger.info("\n--- Test 7: Create Ticket (Simulate Real API Call - Expect Failure for mock URL) ---")
+    config.TICKETING_SYSTEM_API_URL = "http://mock-ticketing-api.example.com/api/tickets" # A non-mock URL
+    config.TICKETING_SYSTEM_API_KEY = "test_key_for_simulated_call"
+    if should_escalate_test3:
+        ticket_id_real_attempt = create_escalation_ticket(test_session_id, query3, history3, reason_test3)
+        logger.info(f"Test 7: Real API Call Attempt Ticket ID: {ticket_id_real_attempt}")
+        assert "ESCALATION_FAILED" in ticket_id_real_attempt # Expecting failure for this URL
+
+    config.TICKETING_SYSTEM_API_URL = original_api_url # Restore for other potential tests or default behavior
+    logger.info("\n--- EscalationManager tests complete ---")
 ```
